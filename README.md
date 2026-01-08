@@ -168,7 +168,8 @@ The secure version implements:
 
 - [Vulnerability Report](docs/vulnerability_report.md) - Detailed security analysis with real-world incidents
 - [Exploitation Guide](docs/exploitation_guide.md) - Step-by-step attack reproduction
-- [Fix Documentation](docs/fix_documentation.md) - Security fixes explained
+- [Fix Documentation](docs/fix_documentation.md) - Security fixes explained (on secure branch)
+
 
 ## Credits & Acknowledgments
 
