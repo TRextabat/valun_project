@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  agent-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.agent
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - MCP_SERVER_COMMAND=python
+      - MCP_SERVER_ARGS=/app/mcp_server/server.py
+    volumes:
+      - ../demo:/app/demo  # Mount test files for easy modification
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  default:
+    name: mcp-demo-network
