@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     gemini_api_key: str
-    mcp_server_command: str = "python"
-    mcp_server_args: str = "/app/mcp_server/server.py"
+    # MCP server connection (SSE transport)
+    mcp_server_url: str = "http://mcp-server:8001/sse"
 
     class Config:
         env_file = ".env"

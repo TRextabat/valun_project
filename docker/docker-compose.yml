@@ -1,18 +1,40 @@
-version: '3.8'
-
 services:
+  # MCP Server - Contains the vulnerable/secure tool implementations
+  mcp-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.mcp
+    ports:
+      - "8001:8001"
+    environment:
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8001
+    volumes:
+      - ../demo:/app/demo  # Mount test files
+      - ../mcp_server:/app/mcp_server  # Mount for hot reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Agent API - FastAPI + PydanticAI + Gemini
   agent-api:
     build:
       context: ..
       dockerfile: docker/Dockerfile.agent
     ports:
       - "8000:8000"
+    env_file:
+      - ../.env
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - MCP_SERVER_COMMAND=python
-      - MCP_SERVER_ARGS=/app/mcp_server/server.py
+      - MCP_SERVER_URL=http://mcp-server:8001/sse
     volumes:
-      - ../demo:/app/demo  # Mount test files for easy modification
+      - ../agent_api:/app/agent_api  # Mount for hot reload
+    depends_on:
+      mcp-server:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

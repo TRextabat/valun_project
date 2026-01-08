@@ -74,4 +74,9 @@ def list_files(directory: str) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run()
+    import os
+    # Run as HTTP server for Docker networking
+    # Uses SSE transport for inter-container communication
+    host = os.getenv("MCP_HOST", "0.0.0.0")
+    port = int(os.getenv("MCP_PORT", "8001"))
+    mcp.run(transport="sse", host=host, port=port)

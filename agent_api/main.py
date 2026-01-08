@@ -64,8 +64,26 @@ async def chat(request: ChatRequest):
                     if hasattr(part, 'tool_name'):
                         tools_called.append(part.tool_name)
 
+        # Get the response text - try different attributes for compatibility
+        response_text = ""
+        if hasattr(result, 'output'):
+            response_text = str(result.output)
+        elif hasattr(result, 'data'):
+            response_text = str(result.data)
+        else:
+            # Get last text message from messages
+            for msg in reversed(result.all_messages()):
+                if hasattr(msg, 'content'):
+                    response_text = str(msg.content)
+                    break
+                elif hasattr(msg, 'parts'):
+                    for part in msg.parts:
+                        if hasattr(part, 'content'):
+                            response_text = str(part.content)
+                            break
+
         return ChatResponse(
-            response=result.data,
+            response=response_text,
             tools_called=tools_called
         )
     except Exception as e:
