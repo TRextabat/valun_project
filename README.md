@@ -170,6 +170,7 @@ The secure version implements:
 - [Exploitation Guide](docs/exploitation_guide.md) - Step-by-step attack reproduction
 - [Fix Documentation](docs/fix_documentation.md) - Security fixes explained (on secure branch)
 
+
 ## Credits & Acknowledgments
 
 **Project Concept & Design:** Original idea, architecture design, and security research by the project author.
