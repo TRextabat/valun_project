@@ -1,5 +1,7 @@
 # MCP Tool Poisoning Vulnerability Demo
 
+**Repository:** https://github.com/TRextabat/valun_project
+
 A demonstration project for a school security assessment showing the **MCP Tool Poisoning** vulnerability - a cutting-edge AI security issue where malicious instructions hidden in MCP tool descriptions manipulate AI agents into performing unauthorized actions.
 
 ## Overview
