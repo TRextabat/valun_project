@@ -1,6 +1,13 @@
-"""FastAPI application for MCP Vulnerability Demo."""
+"""FastAPI application for MCP Vulnerability Demo.
+
+VULNERABLE VERSION - Contains multiple security issues:
+1. Tool Poisoning in MCP server (hidden instructions in tool descriptions)
+2. Overly permissive CORS (allows any origin)
+3. Missing security headers (no X-Frame-Options, CSP, etc.)
+"""
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 
@@ -21,6 +28,21 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# VULNERABILITY: Overly permissive CORS configuration
+# This allows ANY website to make requests to our API and read responses
+# A malicious site can steal data from users who have access to this API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # INSECURE: Allows all origins
+    allow_credentials=True,  # INSECURE: Allows cookies/auth headers
+    allow_methods=["*"],  # INSECURE: Allows all HTTP methods
+    allow_headers=["*"],  # INSECURE: Allows all headers
+)
+
+# VULNERABILITY: No security headers middleware
+# Missing: X-Frame-Options, X-Content-Type-Options, CSP, etc.
+# This makes the application vulnerable to clickjacking, MIME sniffing, XSS
 
 
 class ChatRequest(BaseModel):

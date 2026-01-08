@@ -1,0 +1,88 @@
+=============================================================================
+MCP HEADER SECURITY VULNERABILITIES - EVIDENCE CAPTURE
+Date: $(date)
+=============================================================================
+
+## 1. MISSING SECURITY HEADERS
+
+Command:
+$ curl -s -D - -o /dev/null http://localhost:8000/health
+
+HTTP/1.1 200 OK
+date: Thu, 08 Jan 2026 19:59:39 GMT
+server: uvicorn
+content-length: 43
+content-type: application/json
+
+
+Analysis:
+- NO X-Frame-Options header -> Vulnerable to clickjacking
+- NO X-Content-Type-Options header -> Vulnerable to MIME sniffing
+- NO Content-Security-Policy header -> Vulnerable to XSS
+- NO X-XSS-Protection header -> Browser XSS filter disabled
+- NO Referrer-Policy header -> Referrer information leakage
+
+=============================================================================
+
+## 2. OVERLY PERMISSIVE CORS
+
+Command:
+$ curl -s -D - -o /dev/null -H "Origin: http://evil-attacker.com" http://localhost:8000/health
+
+HTTP/1.1 200 OK
+date: Thu, 08 Jan 2026 19:59:39 GMT
+server: uvicorn
+content-length: 43
+content-type: application/json
+access-control-allow-origin: *
+access-control-allow-credentials: true
+
+
+Analysis:
+- access-control-allow-origin: * -> Allows ANY website to access the API
+- access-control-allow-credentials: true -> Allows cookies to be sent
+- This combination allows any malicious website to steal data from authenticated users
+
+=============================================================================
+
+## 3. CORS PREFLIGHT CHECK
+
+Command:
+$ curl -s -D - -o /dev/null -X OPTIONS \
+  -H "Origin: http://evil-attacker.com" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: Content-Type" \
+  http://localhost:8000/chat
+
+HTTP/1.1 200 OK
+date: Thu, 08 Jan 2026 19:59:39 GMT
+server: uvicorn
+vary: Origin
+access-control-allow-methods: DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT
+access-control-max-age: 600
+access-control-allow-credentials: true
+access-control-allow-origin: http://evil-attacker.com
+access-control-allow-headers: Content-Type
+content-length: 2
+content-type: text/plain; charset=utf-8
+
+
+Analysis:
+- Preflight request returns 200 OK with permissive CORS headers
+- This means cross-origin POST requests are allowed
+- Malicious JavaScript can send POST requests to /chat endpoint
+
+=============================================================================
+
+## 4. CROSS-ORIGIN DATA THEFT DEMO
+
+A malicious website can:
+1. Make POST requests to http://localhost:8000/chat
+2. Read the response (because of CORS: *)
+3. Exfiltrate sensitive data to attacker's server
+
+Demo file: demo/malicious_site.html
+Run: python -m http.server 9000 -d demo/
+Open: http://localhost:9000/malicious_site.html
+
+=============================================================================
