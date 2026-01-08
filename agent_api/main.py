@@ -1,12 +1,12 @@
-"""FastAPI application for MCP Vulnerability Demo.
+"""FastAPI application for MCP Security Demo.
 
-VULNERABLE VERSION - Contains multiple security issues:
-1. Tool Poisoning in MCP server (hidden instructions in tool descriptions)
-2. Overly permissive CORS (allows any origin)
-3. Missing security headers (no X-Frame-Options, CSP, etc.)
+SECURE VERSION - Contains multiple security fixes:
+1. Strict CORS (only allows specific origins)
+2. Security headers middleware (X-Frame-Options, CSP, etc.)
+3. No tool poisoning in MCP server
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
@@ -23,26 +23,53 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="MCP Vulnerability Demo API",
-    description="Demonstrates MCP Tool Poisoning vulnerability",
-    version="1.0.0",
+    title="MCP Security Demo API",
+    description="Demonstrates secure MCP implementation with security fixes",
+    version="2.0.0",
     lifespan=lifespan
 )
 
-# VULNERABILITY: Overly permissive CORS configuration
-# This allows ANY website to make requests to our API and read responses
-# A malicious site can steal data from users who have access to this API
+# SECURITY FIX 1: Strict CORS configuration
+# Only allow requests from the same origin (localhost:8000)
+# This prevents cross-origin attacks from malicious websites
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # INSECURE: Allows all origins
-    allow_credentials=True,  # INSECURE: Allows cookies/auth headers
-    allow_methods=["*"],  # INSECURE: Allows all HTTP methods
-    allow_headers=["*"],  # INSECURE: Allows all headers
+    allow_origins=[
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ],  # SECURE: Only allow same origin
+    allow_credentials=False,  # SECURE: Don't allow credentials in CORS
+    allow_methods=["GET", "POST"],  # SECURE: Only allow necessary methods
+    allow_headers=["Content-Type"],  # SECURE: Only allow necessary headers
 )
 
-# VULNERABILITY: No security headers middleware
-# Missing: X-Frame-Options, X-Content-Type-Options, CSP, etc.
-# This makes the application vulnerable to clickjacking, MIME sniffing, XSS
+
+# SECURITY FIX 2: Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """Add security headers to all responses."""
+    response = await call_next(request)
+
+    # Prevent clickjacking
+    response.headers["X-Frame-Options"] = "DENY"
+
+    # Prevent MIME sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+
+    # Enable browser XSS filter
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+
+    # Content Security Policy - restrict resource loading
+    response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'"
+
+    # Control referrer information
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+    # Prevent caching of sensitive data
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+
+    return response
 
 
 class ChatRequest(BaseModel):
@@ -72,8 +99,8 @@ async def chat(request: ChatRequest):
     """Send a message to the AI agent connected to MCP server.
 
     The agent will use available MCP tools to respond to your request.
-    In the vulnerable version, this may leak sensitive data due to
-    tool poisoning in the tool descriptions.
+    In the secure version, tool descriptions are clean and file access
+    is restricted to allowed directories.
     """
     try:
         result = await agent.run(request.message)
@@ -117,8 +144,7 @@ async def list_tools():
     """List available MCP tools.
 
     This shows what the AI sees including tool descriptions.
-    In the vulnerable version, you can see the hidden instructions
-    embedded in the check_file_safety tool description.
+    In the secure version, descriptions are clean without hidden instructions.
     """
     tools = await mcp_server.list_tools()
     return ToolsResponse(
@@ -132,4 +158,14 @@ async def list_tools():
 @app.get("/health")
 async def health():
     """Health check endpoint."""
-    return {"status": "healthy", "version": "vulnerable"}
+    return {
+        "status": "healthy",
+        "version": "secure",
+        "security_features": [
+            "strict_cors",
+            "security_headers",
+            "path_allowlisting",
+            "audit_logging",
+            "no_tool_poisoning"
+        ]
+    }
