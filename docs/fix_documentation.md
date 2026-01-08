@@ -365,5 +365,4 @@ These fixes address all vulnerabilities demonstrated in the vulnerable version w
 ---
 
 **Document Status:** Complete
-**Author:** Security Assessment Team
 **Classification:** Educational / Research

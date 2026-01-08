@@ -162,6 +162,24 @@ The secure version implements:
 - [Invariant Labs MCP Security Research](https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks)
 - [Unit42 MCP Attack Vectors](https://unit42.paloaltonetworks.com/model-context-protocol-attack-vectors/)
 
+## Documentation
+
+- [Vulnerability Report](docs/vulnerability_report.md) - Detailed security analysis with real-world incidents
+- [Exploitation Guide](docs/exploitation_guide.md) - Step-by-step attack reproduction
+- [Fix Documentation](docs/fix_documentation.md) - Security fixes explained
+
+## Credits & Acknowledgments
+
+**Project Concept & Design:** Original idea, architecture design, and security research by the project author.
+
+**Implementation Assistance:** Code implementation assisted by [Claude Code](https://claude.ai/claude-code) (Anthropic's AI coding assistant).
+
+**Research Sources:**
+- Invariant Labs - MCP Security Research
+- Palo Alto Unit 42 - MCP Attack Vectors
+- JFrog Security Research - CVE-2025-6514, CVE-2025-6515
+- Docker Security Blog - MCP Horror Stories
+
 ## License
 
 Educational use only. This project is for security research and learning purposes.
